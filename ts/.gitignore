@@ -1,0 +1,6 @@
+build/
+hippo.bundle.js
+hippo.bundle.d.ts
+package-lock.json
+node_modules/
+scratch/
