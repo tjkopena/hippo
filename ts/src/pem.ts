@@ -1,25 +1,34 @@
 
 import {str2ab, ab2str} from "./strutils"
 
-export async function fromPublicKeyPEM(pem: string, use: KeyUsage[]) : Promise<CryptoKey> {
+const SPKI_HEADER = "-----BEGIN PUBLIC KEY-----";
+const SPKI_FOOTER = "-----END PUBLIC KEY-----";
 
-  const SPKI_HEADER = "-----BEGIN PUBLIC KEY-----";
-  const SPKI_FOOTER = "-----END PUBLIC KEY-----";
+export async function fromPublicKeyPEM(pem: string, use: KeyUsage) : Promise<CryptoKey> {
+
+  pem = pem.trim();
+  if (!pem.startsWith(SPKI_HEADER))
+    throw new Error("PEM does not have SPKI header")
+  if (!pem.endsWith(SPKI_FOOTER))
+    throw new Error("PEM does not have SPKI footer")
+
+  const algorithm = (use == "encrypt") ? "RSA-OAEP" : "RSA-PSS";
 
   const b64 = pem.substring(SPKI_HEADER.length,
                             pem.length - SPKI_FOOTER.length - 1);
-  const data = str2ab(window.atob(b64))
+  const data = str2ab(window.atob(b64));
 
-  return window.crypto.subtle.importKey(
+  const key = window.crypto.subtle.importKey(
     "spki",
     data,
     {
-      name: "RSA-OAEP",
+      name: algorithm,
       hash: "SHA-256",
     },
     true,
-    use);
+    [use]);
 
+  return key;
 }
 
 export async function toPEM(key: CryptoKey) : Promise<string> {
@@ -43,7 +52,7 @@ export async function toPEM(key: CryptoKey) : Promise<string> {
   let pem = `-----BEGIN${label}KEY-----\n`;
   while (b64key.length > 0) {
     pem += b64key.substring(0, 76) + '\n';
-    b64key = b64key.substring(64);
+    b64key = b64key.substring(76);
   }
   pem += `-----END${label}KEY-----`;
 

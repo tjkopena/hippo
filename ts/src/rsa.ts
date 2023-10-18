@@ -31,7 +31,7 @@ export class EncryptingKey {
   }
 
   static async fromPublicKeyPEM(pemdata: string) : Promise<EncryptingKey> {
-    const key = await pem.fromPublicKeyPEM(pemdata, ["encrypt"]);
+    const key = await pem.fromPublicKeyPEM(pemdata, "encrypt");
     return new EncryptingKey(key);
   }
 
@@ -178,6 +178,11 @@ export class VerifyingKey {
 
   constructor(key: CryptoKey) {
     this.key = key;
+  }
+
+  static async fromPublicKeyPEM(pemdata: string) : Promise<VerifyingKey> {
+    const key = await pem.fromPublicKeyPEM(pemdata, "verify");
+    return new VerifyingKey(key);
   }
 
   async toPEM() : Promise<string> {

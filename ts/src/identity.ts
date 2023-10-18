@@ -1,4 +1,5 @@
 import * as pk from "./rsa"
+import * as pem from "./pem"
 
 export class PrivateIdentity {
 
@@ -55,7 +56,20 @@ export class PublicIdentity {
     this.verifyingKey = verifyingKey;
   }
 
-  async toJSON(): Promise<string> {
+  static async fromJSON(text: string) : Promise<PublicIdentity> {
+    const identity = JSON.parse(text);
+    if (!identity.hasOwnProperty('encrypting') || !identity.hasOwnProperty('verifying'))
+      throw new Error("Text is not a public identity JSON");
+
+    const [encrypter, verifier] = await Promise.all([
+      pk.EncryptingKey.fromPublicKeyPEM(identity.encrypting),
+      pk.VerifyingKey.fromPublicKeyPEM(identity.verifying)
+    ]);
+
+    return new PublicIdentity(encrypter, verifier);
+  }
+
+  async toJSON() : Promise<string> {
     const [encrypter, verifier] = await Promise.all([
       this.encryptingKey.toPEM(),
       this.verifyingKey.toPEM(),
@@ -67,6 +81,10 @@ export class PublicIdentity {
     }
 
     return JSON.stringify(identity);
+  }
+
+  async encrypt(data: ArrayBuffer) : Promise<pk.PKCiphertext> {
+    return this.encryptingKey.encrypt(data);
   }
 
   // end PublicIdentity
