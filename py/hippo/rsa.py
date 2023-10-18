@@ -26,6 +26,10 @@ class EncryptingKey:
     def __init__(self, key):
         self.key = key
 
+    def toPEM(self):
+        pem = self.key.public_bytes(encoding=serialization.Encoding.PEM,
+                                    format=serialization.PublicFormat.SubjectPublicKeyInfo)
+        return str(pem, encoding='utf-8')
 
 class DecryptingKey:
     def __init__(self, key):
@@ -48,6 +52,8 @@ class DecryptingKey:
         key = AESGCM(key_bits)
         return key.decrypt(iv, ciphertext, None)
 
+    def encrypting_key(self):
+        return EncryptingKey(self.key.public_key())
 
 class SigningKey:
     def __init__(self, key):
@@ -58,6 +64,8 @@ class SigningKey:
         key = serialization.load_pem_private_key(bytes(pem, 'utf-8'), None)
         return SigningKey(key)
 
+    def verifying_key(self):
+        return VerifyingKey(self.key.public_key())
 
 class VerifyingKey:
     def __init__(self, key):
@@ -67,6 +75,11 @@ class VerifyingKey:
     def fromPEM(cls, pem):
         key = serialization.load_pem_public_key(bytes(pem, 'utf-8'), None)
         return VerifyingKey(key)
+
+    def toPEM(self):
+        pem = self.key.public_bytes(encoding=serialization.Encoding.PEM,
+                                    format=serialization.PublicFormat.SubjectPublicKeyInfo)
+        return str(pem, encoding='utf-8')
 
     def verify(self, signedtext):
         sig = base64.b64decode(signedtext.sig)

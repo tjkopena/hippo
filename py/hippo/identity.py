@@ -2,6 +2,19 @@ import json
 
 from .rsa import DecryptingKey, SigningKey, CipherText
 
+class PublicIdentity:
+    def __init__(self, encrypting, verifying):
+        self.encrypting_key = encrypting
+        self.verifying_key = verifying
+
+    def toJSON(self):
+        public_identity = {
+            "encrypting": self.encrypting_key.toPEM(),
+            "verifying": self.verifying_key.toPEM(),
+        }
+
+        return json.dumps(public_identity)
+
 class PrivateIdentity:
     def __init__(self, decrypting, signing):
         self.decrypting_key = decrypting
@@ -27,3 +40,6 @@ class PrivateIdentity:
     def decrypt(self, message):
         ciphertext = CipherText.from_json(message)
         return self.decrypting_key.decrypt(ciphertext)
+
+    def public_identity(self):
+        return PublicIdentity(self.decrypting_key.encrypting_key(), self.signing_key.verifying_key())
